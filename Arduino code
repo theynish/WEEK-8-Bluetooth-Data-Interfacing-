@@ -1,0 +1,51 @@
+#include "DHT.h"
+#include <SoftwareSerial.h>
+#define DHTPIN 7 // Data pin connected to DHT22
+#define DHTTYPE DHT11 // DHT 22 (AM2302)
+DHT dht(DHTPIN, DHTTYPE);
+// For Arduino UNO + HC-05 (use pins 2 and 3).
+SoftwareSerial bluetooth(10, 11); // RX, TX
+// For ESP32, replace:
+// SoftwareSerial bluetooth(2, 3);
+// with:
+// #define bluetooth Serial2
+void setup() {
+Serial.begin(38400); // For debug via USB
+bluetooth.begin(38400); // For HC-05
+dht.begin();
+Serial.println("DHT11 + Bluetooth Monitoring Ready");
+}
+void loop() {
+float temp = dht.readTemperature(); // Default °C
+float hum = dht.readHumidity();
+// --
+// Control commands (optional extension)
+// In the Arduino code, you can prepare for receiving commands by
+// adding something like:
+if (bluetooth.available()) {
+  String cmd = bluetooth.readStringUntil('\n');
+  cmd.trim();
+if (cmd == "FAN ON") {
+  digitalWrite(LED_BUILTIN, HIGH);
+} 
+else if (cmd == "FAN OFF") {
+  digitalWrite(LED_BUILTIN, LOW);
+
+}
+}
+// --
+if (!isnan(temp) && !isnan(hum)) {
+// Send only numeric temperature for easy parsing in Python
+  bluetooth.println(temp);
+  // Debug output
+  Serial.print("Temp: ");
+  Serial.print(temp);
+  Serial.print(" °C | Hum: ");
+  Serial.print(hum);
+  Serial.println(" %");
+}
+else {
+Serial.println("Failed to read from DHT11 sensor!");
+}
+delay(2000); // Read every 2 seconds
+}
